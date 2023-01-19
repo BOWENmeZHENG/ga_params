@@ -5,6 +5,7 @@ def write_files(num_total_real, coors_flakes_all, coors_inclusions, L_box, mass_
     in_prefix, all_prefix = write_in(data_prefix, sigma, cut, num_cycle, ts, anneal_temp)
     write_sh(in_prefix, all_prefix, nodes, tasks_per_node, mem, time)
     write_tension(all_prefix)
+    write_compression(all_prefix)
     return data_prefix, in_prefix, all_prefix
 
 
@@ -152,6 +153,53 @@ def write_tension(all_prefix):
         f.write('  next 		n\n')
         f.write('  jump 		SELF here\n')
 
+def write_compression(all_prefix):
+    with open(f'in.compression', 'w') as f:
+        f.write('# \n')
+        f.write('\n')
+        f.write('units 		metal\n')
+        f.write('timestep	0.5e-3\n')
+        f.write('dimension 	3\n')
+        f.write('boundary 	p p p\n')
+        f.write(f'log 	log.compression\n')
+        f.write('\n')
+        f.write('atom_style full\n')
+        f.write(f'read_data 	data.{all_prefix}\n')
+        f.write('\n')
+        f.write('pair_style 	airebo 3\n')
+        f.write('pair_coeff	* * CH.airebo C C\n')
+        f.write('\n')
+        f.write('compute 	PE all pe\n')
+        f.write('compute 	STRESSATOM all stress/atom NULL pair\n')
+        f.write('compute 	STRESSTEMP1 all reduce sum c_STRESSATOM[*]\n')
+        f.write('\n')
+        f.write('variable 	STRESSTEMP2 equal 1e-25*c_STRESSTEMP1[1]\n')
+        f.write('variable 	VOLUME equal vol*1e-30\n')
+        f.write('variable 	STRESS equal v_STRESSTEMP2/v_VOLUME*1e-9 # Unit: GPa\n')
+        f.write('variable 	LENGTHX equal lx\n')
+        f.write('variable 	STRAINRATE equal -0.05\n')
+        f.write('variable 	INCREMENT equal -0.01/v_STRAINRATE/0.5e-3\n')
+        f.write('variable 	PRINTTIME equal v_INCREMENT+1000\n')
+        f.write('\n')
+        f.write('velocity 	all create 300 2 mom yes rot yes dist gaussian\n')
+        f.write('dump       	TRJ all custom ${PRINTTIME} compression.lammpstrj id type x y z\n')
+        f.write('thermo 		${PRINTTIME}\n')
+        f.write('thermo_style    custom step temp press vol density lx ly lz xlo xhi v_STRESS\n')
+        f.write('fix 		PRINT all print ${PRINTTIME} "${LENGTHX}   ${STRESS}" file compression.txt\n')
+        f.write('\n')
+        f.write('variable 	n loop 100\n')
+        f.write('  label 	here\n')
+        f.write('  fix		NPT all npt temp 300.0 300.0 1.000 y 1 1 1 z 1 1 1\n')
+        f.write('  fix 		DEFORM all deform 1 x trate ${STRAINRATE}\n')
+        f.write('  run 		${INCREMENT}\n')
+        f.write('  unfix 	NPT\n')
+        f.write('  minimize 	1.0e-4 1.0e-6 100 1000\n')
+        f.write('  fix		NVT all nvt temp 300.0 300.0 1.000\n')
+        f.write('  run 		500\n')
+        f.write('  unfix 	NVT\n')
+        f.write('  next 		n\n')
+        f.write('  jump 		SELF here\n')
+
 def write_sh(in_prefix, all_prefix, nodes, tasks_per_node, mem, time):
     with open(f'sh.{all_prefix}', 'w') as f:
         f.write('#!/bin/bash\n')
@@ -173,5 +221,6 @@ def write_sh(in_prefix, all_prefix, nodes, tasks_per_node, mem, time):
         f.write('\n')
         f.write(f'srun lmp -in in.{in_prefix}\n')
         f.write(f'srun lmp -in in.tension\n')
+        f.write(f'srun lmp -in in.compression\n')
 
 

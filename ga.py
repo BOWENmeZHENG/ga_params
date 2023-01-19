@@ -6,16 +6,16 @@ import utils, write
 MASS_C = 12.01e-3 / 6.0221e23  # kg
 DENSITY_INITIAL = 1  # kg/m3
 
-num_total = 400
-num_inc = 1200
-mass_inc = 0.1
+num_total = 100
+num_inc = 100
+mass_inc = 1
 seed = 12
-sigma = 15
-cut = 21
+sigma = 4
+cut = 8
 num_cycle = 10
-ts = 100000
-anneal_temp = 4000
-nodes = 16
+ts = 50000
+anneal_temp = 2000
+nodes = 8
 tasks_per_node = 32
 mem = 16
 time = 5
@@ -71,8 +71,8 @@ shutil.copyfile('CH.airebo', f'{folder}/CH.airebo')
 
 
 # upload files to supercomputer
-os.system(f"scp -r {folder}/ bwzheng@login.expanse.sdsc.edu:/expanse/lustre/scratch/bwzheng/temp_project/")
-
+os.system(f"scp -r {folder}/ bwzheng@login.expanse.sdsc.edu:/expanse/lustre/scratch/bwzheng/temp_project/paper/")
+shutil.rmtree(folder, ignore_errors=False, onerror=None)
 # Automatically run
 # os.system("ssh bwzheng@login.expanse.sdsc.edu")
 # os.system(f"cd /expanse/lustre/scratch/$USER/temp_project")  # /{folder}
