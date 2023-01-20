@@ -6,8 +6,7 @@ import utils, write
 MASS_C = 12.01e-3 / 6.0221e23  # kg
 DENSITY_INITIAL = 1  # kg/m3
 
-def gen_ga(taskname, num_total, num_inc, mass_inc, sigma, cut, num_cycle, ts, anneal_temp, nodes, time, seed,
-           tasks_per_node=32, mem=16):
+def gen_ga(taskname, num_total, num_inc, mass_inc, sigma, cut, num_cycle, ts, anneal_temp, seed):
 
     np.random.seed(seed)
 
@@ -46,18 +45,44 @@ def gen_ga(taskname, num_total, num_inc, mass_inc, sigma, cut, num_cycle, ts, an
     coors_flakes_all = np.vstack(coors_flakes_all)
 
     data_prefix, in_prefix, all_prefix = write.write_files(num_total_real, coors_flakes_all, coors_inclusions, L_box, mass_inc, seed,
-                                                           sigma, cut, num_cycle, ts, anneal_temp,
-                                                           nodes, tasks_per_node, mem, time)
+                                                           sigma, cut, num_cycle, ts, anneal_temp)
     folder = '_' + all_prefix
     os.makedirs(folder, exist_ok=True)
     files = os.listdir('./')
     for file in files:
-        if file.startswith('data.') or file.startswith('in.') or file.startswith('sh.'):
+        if file.startswith('data.') or file.startswith('in.'): #  or file.startswith('sh.'):
             shutil.move(file, f'{folder}/{file}')
     shutil.copyfile('CH.airebo', f'{folder}/CH.airebo')
     shutil.move(folder, f'{taskname}/{folder}')
 
+    return data_prefix, in_prefix, folder
 
-    # upload files to supercomputer
-    # os.system(f"scp -r {folder}/ bwzheng@login.expanse.sdsc.edu:/expanse/lustre/scratch/bwzheng/temp_project/paper/")
-    # shutil.rmtree(folder, ignore_errors=False, onerror=None)
+
+def write_sh(task, folder_list, in_prefix, param, nodes, time, tasks_per_node=32, mem=16):
+    filename = f'{task}_{param}.sh'
+    with open(filename, 'w') as f:
+        f.write('#!/bin/bash\n')
+        f.write(f'#SBATCH --job-name="{task}_{param}"\n')
+        f.write(f'#SBATCH --output="out.{task}_{param}"\n')
+        f.write('#SBATCH --partition=compute\n')
+        f.write('#SBATCH --constraint="lustre"\n')
+        f.write(f'#SBATCH --nodes={nodes}\n')
+        f.write(f'#SBATCH --ntasks-per-node={tasks_per_node}\n')
+        f.write(f'#SBATCH --mem={mem}G\n')
+        f.write('#SBATCH --account="ucb312"\n')
+        f.write('#SBATCH --export=ALL\n')
+        f.write(f'#SBATCH -t {time}:00:00\n')
+        f.write('\n')
+        f.write('module load   slurm\n')
+        f.write('module load   gcc/10.2.0\n')
+        f.write('module load   openmpi/4.0.4\n')
+        f.write('module load   lammps/20200721-openblas\n')
+        f.write('\n')
+        for folder in folder_list:
+            f.write(f'cd {folder}\n')
+            f.write(f'srun lmp -in in.{in_prefix}\n')
+            f.write(f'srun lmp -in in.tension\n')
+            f.write(f'srun lmp -in in.compression\n')
+            f.write('cd ..\n')
+            f.write('\n')
+    return filename

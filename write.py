@@ -1,9 +1,8 @@
 def write_files(num_total_real, coors_flakes_all, coors_inclusions, L_box, mass_inc, seed,
-                sigma, cut, num_cycle, ts, anneal_temp,
-                nodes, tasks_per_node, mem, time):
+                sigma, cut, num_cycle, ts, anneal_temp):
     data_prefix = write_data(num_total_real, coors_flakes_all, coors_inclusions, L_box, mass_inc, seed)
     in_prefix, all_prefix = write_in(data_prefix, sigma, cut, num_cycle, ts, anneal_temp)
-    write_sh(in_prefix, all_prefix, nodes, tasks_per_node, mem, time)
+    # write_sh(in_prefix, all_prefix, nodes, tasks_per_node, mem, time)
     write_tension(all_prefix)
     write_compression(all_prefix)
     return data_prefix, in_prefix, all_prefix
@@ -200,27 +199,27 @@ def write_compression(all_prefix):
         f.write('  next 		n\n')
         f.write('  jump 		SELF here\n')
 
-def write_sh(in_prefix, all_prefix, nodes, tasks_per_node, mem, time):
-    with open(f'sh.{all_prefix}', 'w') as f:
-        f.write('#!/bin/bash\n')
-        f.write(f'#SBATCH --job-name="{all_prefix}"\n')
-        f.write(f'#SBATCH --output="out.{all_prefix}"\n')
-        f.write('#SBATCH --partition=compute\n')
-        f.write('#SBATCH --constraint="lustre"\n')
-        f.write(f'#SBATCH --nodes={nodes}\n')
-        f.write(f'#SBATCH --ntasks-per-node={tasks_per_node}\n')
-        f.write(f'#SBATCH --mem={mem}G\n')
-        f.write('#SBATCH --account="ucb312"\n')
-        f.write('#SBATCH --export=ALL\n')
-        f.write(f'#SBATCH -t {time}:00:00\n')
-        f.write('\n')
-        f.write('module load   slurm\n')
-        f.write('module load   gcc/10.2.0\n')
-        f.write('module load   openmpi/4.0.4\n')
-        f.write('module load   lammps/20200721-openblas\n')
-        f.write('\n')
-        f.write(f'srun lmp -in in.{in_prefix}\n')
-        f.write(f'srun lmp -in in.tension\n')
-        f.write(f'srun lmp -in in.compression\n')
+# def write_sh(in_prefix, all_prefix, nodes, tasks_per_node, mem, time):
+#     with open(f'sh.{all_prefix}', 'w') as f:
+#         f.write('#!/bin/bash\n')
+#         f.write(f'#SBATCH --job-name="{all_prefix}"\n')
+#         f.write(f'#SBATCH --output="out.{all_prefix}"\n')
+#         f.write('#SBATCH --partition=compute\n')
+#         f.write('#SBATCH --constraint="lustre"\n')
+#         f.write(f'#SBATCH --nodes={nodes}\n')
+#         f.write(f'#SBATCH --ntasks-per-node={tasks_per_node}\n')
+#         f.write(f'#SBATCH --mem={mem}G\n')
+#         f.write('#SBATCH --account="ucb312"\n')
+#         f.write('#SBATCH --export=ALL\n')
+#         f.write(f'#SBATCH -t {time}:00:00\n')
+#         f.write('\n')
+#         f.write('module load   slurm\n')
+#         f.write('module load   gcc/10.2.0\n')
+#         f.write('module load   openmpi/4.0.4\n')
+#         f.write('module load   lammps/20200721-openblas\n')
+#         f.write('\n')
+#         f.write(f'srun lmp -in in.{in_prefix}\n')
+#         f.write(f'srun lmp -in in.tension\n')
+#         f.write(f'srun lmp -in in.compression\n')
 
 
