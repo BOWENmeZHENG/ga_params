@@ -186,7 +186,7 @@ def write_compression(all_prefix):
         f.write('thermo_style    custom step temp press vol density lx ly lz xlo xhi v_STRESS\n')
         f.write('fix 		PRINT all print ${PRINTTIME} "${LENGTHX}   ${STRESS}" file compression.txt\n')
         f.write('\n')
-        f.write('variable 	n loop 100\n')
+        f.write('variable 	n loop 50\n')
         f.write('  label 	here\n')
         f.write('  fix		NPT all npt temp 300.0 300.0 1.000 y 1 1 1 z 1 1 1\n')
         f.write('  fix 		DEFORM all deform 1 x trate ${STRAINRATE}\n')
