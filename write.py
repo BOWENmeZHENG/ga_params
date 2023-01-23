@@ -101,6 +101,9 @@ def write_in(data_prefix, sigma, cut, num_cycle, ts, anneal_temp, Tdrag=1, Pdrag
             f.write(f'run    {ts}\n')
             f.write('\n')
         f.write('delete_atoms group inclusions\n')
+        f.write('unfix 1\n')
+        f.write('fix		1 all npt temp 300.0 300.0 1.000 iso 1 1 0.500\n')
+        f.write('run 		50000\n')
         f.write(f'write_data data.{all_prefix}\n')
     return in_prefix, all_prefix
 
